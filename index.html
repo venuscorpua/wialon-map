@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Live Tracking: Множественные иконки</title>
+  <title>Live Tracking: Центрирование по выбору</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -10,30 +10,30 @@
       height: 100%;
       margin: 0;
     }
+    #vehicleSelector {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      padding: 6px;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
+
+<select id="vehicleSelector">
+  <option value="">-- Выберите машину --</option>
+</select>
+
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  // Иконки по типу транспорта
   const iconMap = {
-    bus: L.icon({
-      iconUrl: 'bus.png',
-      iconSize: [40, 40],
-      iconAnchor: [20, 40],
-      popupAnchor: [0, -40]
-    }),
-    bus2: L.icon({
-      iconUrl: 'bus2.png',
-      iconSize: [40, 40],
-      iconAnchor: [20, 40],
-      popupAnchor: [0, -40]
-    })
+    bus: L.icon({ iconUrl: 'bus.png', iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -40] }),
+    bus2: L.icon({ iconUrl: 'bus2.png', iconSize: [40, 40], iconAnchor: [20, 40], popupAnchor: [0, -40] })
   };
-
-
 
   const map = L.map('map').setView([50.4511926, 30.5259958], 13);
 
@@ -41,34 +41,57 @@
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  let markers = [];
+  let markers = {};
+  let selectedVehicleName = null;
 
   async function updatePositions() {
     try {
       const response = await fetch('positions.json?_=' + new Date().getTime());
       const data = await response.json();
 
-      markers.forEach(marker => map.removeLayer(marker));
-      markers = [];
+      // Удаляем все маркеры
+      for (const name in markers) {
+        map.removeLayer(markers[name]);
+      }
+      markers = {};
 
-      for (const vehicle of data) {
+      const selector = document.getElementById('vehicleSelector');
+      const selectedNow = selector.value;
+
+      selector.innerHTML = '<option value="">-- Выберите машину --</option>';
+
+      data.forEach(vehicle => {
         const icon = iconMap[vehicle.type];
-        if (!icon) continue; // пропускаем, если нет подходящей иконки
+        if (!icon) return;
 
         const marker = L.marker([vehicle.lat, vehicle.lon], { icon: icon })
           .addTo(map)
           .bindPopup(vehicle.name);
-        markers.push(marker);
-      }
 
-      if (markers.length > 0) {
-        map.panTo(markers[0].getLatLng());
+        markers[vehicle.name] = marker;
+
+        const option = document.createElement('option');
+        option.value = vehicle.name;
+        option.textContent = vehicle.name;
+        if (vehicle.name === selectedNow) option.selected = true;
+        selector.appendChild(option);
+      });
+
+      if (selectedNow && markers[selectedNow]) {
+        map.panTo(markers[selectedNow].getLatLng());
       }
 
     } catch (e) {
-      console.error("Ошибка получения координат:", e);
+      console.error("Ошибка загрузки координат:", e);
     }
   }
+
+  document.getElementById('vehicleSelector').addEventListener('change', function () {
+    selectedVehicleName = this.value;
+    if (selectedVehicleName && markers[selectedVehicleName]) {
+      map.panTo(markers[selectedVehicleName].getLatLng());
+    }
+  });
 
   setInterval(updatePositions, 10000);
   updatePositions();
