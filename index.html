@@ -1,13 +1,15 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Live Tracking</title>
+  <title>Live Tracking: Множественные иконки</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    #map { height: 100vh; margin: 0; padding: 0; }
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -15,25 +17,61 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-  var map = L.map('map').setView([50.580725, 30.2546016], 13);
+  // Иконки по типу транспорта
+  const iconMap = {
+    bus: L.icon({
+      iconUrl: 'bus.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    }),
+    bus2: L.icon({
+      iconUrl: 'bus2.png',
+      iconSize: [40, 40],
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
+    })
+  };
+
+
+
+  const map = L.map('map').setView([50.4511926, 30.5259958], 13);
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
   }).addTo(map);
 
-  var marker = L.marker([55.7558, 37.6173]).addTo(map);
+  let markers = [];
 
-  async function updatePosition() {
+  async function updatePositions() {
     try {
-      const res = await fetch('position.json?_=' + new Date().getTime());
-      const pos = await res.json();
-      marker.setLatLng([pos.lat, pos.lon]);
-      map.panTo([pos.lat, pos.lon]);
+      const response = await fetch('positions.json?_=' + new Date().getTime());
+      const data = await response.json();
+
+      markers.forEach(marker => map.removeLayer(marker));
+      markers = [];
+
+      for (const vehicle of data) {
+        const icon = iconMap[vehicle.type];
+        if (!icon) continue; // пропускаем, если нет подходящей иконки
+
+        const marker = L.marker([vehicle.lat, vehicle.lon], { icon: icon })
+          .addTo(map)
+          .bindPopup(vehicle.name);
+        markers.push(marker);
+      }
+
+      if (markers.length > 0) {
+        map.panTo(markers[0].getLatLng());
+      }
+
     } catch (e) {
-      console.error("Error fetching position:", e);
+      console.error("Ошибка получения координат:", e);
     }
   }
 
-  setInterval(updatePosition, 1000);
+  setInterval(updatePositions, 10000);
+  updatePositions();
 </script>
 </body>
 </html>
