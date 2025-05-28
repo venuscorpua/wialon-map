@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Live Tracking: Центрирование по выбору</title>
+  <title>Live Tracking: Выбор машины</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -10,21 +10,34 @@
       height: 100%;
       margin: 0;
     }
-    #vehicleSelector {
+
+    #vehicleSelectorContainer {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 1000;
-      padding: 6px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 8px 12px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    #vehicleSelector {
       font-size: 16px;
+      padding: 6px 10px;
+      min-width: 200px;
+      max-width: 80vw;
     }
   </style>
 </head>
 <body>
 
-<select id="vehicleSelector">
-  <option value="">-- Выберите машину --</option>
-</select>
+<div id="vehicleSelectorContainer">
+  <select id="vehicleSelector">
+    <option value="">-- Выберите машину --</option>
+  </select>
+</div>
 
 <div id="map"></div>
 
